@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import re
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
@@ -51,17 +52,20 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     subprocess.Popen([sys.executable, file_path])
     await update.message.reply_text("Bot başlatıldı.")
 
-# ---- Test Mesajı ----
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Bot aktif.")
 
-# ---- Application ----
 app = ApplicationBuilder().token(TOKEN).build()
 
 app.add_handler(MessageHandler(filters.Document.ALL, handle_file))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-# ---- Polling Başlat ----
+# ---- Python 3.14 Fix ----
+async def main():
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(drop_pending_updates=True)
+    await app.updater.idle()
+
 if __name__ == "__main__":
-    print("Bot polling ile başlatılıyor...")
-    app.run_polling(drop_pending_updates=True)
+    asyncio.run(main())
